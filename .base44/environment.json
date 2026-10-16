@@ -1,0 +1,12 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "IMDB_API_KEY",
+      "description": "Optional OMDb (omdbapi.com) API key used by /api/thumbnail to fetch IMDb posters for non-anime videos. Without it thumbnails still come from local files or the AniList API.",
+      "requiredAtBoot": false
+    }
+  ]
+}

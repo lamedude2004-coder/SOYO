@@ -12,19 +12,27 @@ const CONFIG_PATH: string = path.resolve("./config.json");
  * @returns Config object containing the movie directory.
  */
 export function readConfig(): Config {
-  try {
-   
+  let config: Config = { movieDir: "G:/" }; // Default value
 
+  try {
     if (fs.existsSync(CONFIG_PATH)) {
       const rawData = fs.readFileSync(CONFIG_PATH, "utf8");
-      return JSON.parse(rawData) as Config;
-      
+      config = JSON.parse(rawData) as Config;
     }
-    return { movieDir: "G:/" }; // Default value
   } catch (error) {
     console.error("Error reading config:", error);
     return { movieDir: "G:/" };
   }
+
+  // MOVIE_DIR points at a library that only exists inside the runtime
+  // environment (e.g. a Docker volume). It is used when the directory
+  // configured in config.json is unset or not present on this machine.
+  const envDir = process.env.MOVIE_DIR;
+  if (envDir && (!config.movieDir || !fs.existsSync(config.movieDir))) {
+    return { ...config, movieDir: envDir };
+  }
+
+  return config;
 }
 
 /**

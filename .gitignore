@@ -8,6 +8,9 @@
 
 /config.json
 
+# sandbox sample media library
+/.base44/media/
+
 # testing
 /coverage
 

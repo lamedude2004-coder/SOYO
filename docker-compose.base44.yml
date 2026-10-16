@@ -1,0 +1,45 @@
+# Sandbox/dev environment for SOYO (Next.js app router).
+#
+#   docker compose -f docker-compose.base44.yml up -d --build
+#
+# The app runs from the cloned source with the Next dev server, so edits are
+# picked up without rebuilding images.
+#
+# Video library: ./base44-media is bind-mounted at /media and MOVIE_DIR=/media
+# tells the app to read it (see app/lib/serverUtils.ts). The shared
+# config.json keeps its own local path, so a normal local run is unaffected.
+
+services:
+  web:
+    image: node:20-bookworm-slim
+    working_dir: /app
+    command:
+      - sh
+      - -ec
+      - |
+        if [ ! -f node_modules/.package-lock.json ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
+          npm ci --no-audit --no-fund
+        fi
+        exec npm run dev -- -H 0.0.0.0 -p 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - ./.base44/media:/media
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - MOVIE_DIR=/media
+      # bind mounts do not always deliver inotify events into the container
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    env_file:
+      # platform-managed secrets (e.g. IMDB_API_KEY); empty when none are set
+      - /run/base44/app.env
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    restart: on-failure
